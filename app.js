@@ -57,7 +57,73 @@ function startNewValuation() {
         id: currentValuationId,
         property: {},
         inspection: {},
-        comparables: [],
+        comparables: [
+            {
+                id: 1,
+                address: 'Example Property 1',
+                postcode: 'SW1A 1AA',
+                salePrice: 500000,
+                saleDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                bedrooms: 3,
+                propertyType: 'terraced',
+                squareFeet: 1200,
+                areaUnit: 'sqm',
+                condition: 'good',
+                adjustments: { size: 0, condition: 0, location: 0, timing: 0 }
+            },
+            {
+                id: 2,
+                address: 'Example Property 2',
+                postcode: 'SW1A 2AA',
+                salePrice: 525000,
+                saleDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                bedrooms: 3,
+                propertyType: 'terraced',
+                squareFeet: 1250,
+                areaUnit: 'sqm',
+                condition: 'good',
+                adjustments: { size: 0, condition: 0, location: 0, timing: 0 }
+            },
+            {
+                id: 3,
+                address: 'Example Property 3',
+                postcode: 'SW1A 3AA',
+                salePrice: 510000,
+                saleDate: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                bedrooms: 3,
+                propertyType: 'terraced',
+                squareFeet: 1180,
+                areaUnit: 'sqm',
+                condition: 'average',
+                adjustments: { size: 0, condition: 0, location: 0, timing: 0 }
+            },
+            {
+                id: 4,
+                address: 'Example Property 4',
+                postcode: 'SW1A 4AA',
+                salePrice: 535000,
+                saleDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                bedrooms: 3,
+                propertyType: 'semi-detached',
+                squareFeet: 1300,
+                areaUnit: 'sqm',
+                condition: 'good',
+                adjustments: { size: 0, condition: 0, location: 0, timing: 0 }
+            },
+            {
+                id: 5,
+                address: 'Example Property 5',
+                postcode: 'SW1A 5AA',
+                salePrice: 495000,
+                saleDate: new Date(Date.now() - 150 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                bedrooms: 2,
+                propertyType: 'terraced',
+                squareFeet: 1100,
+                areaUnit: 'sqm',
+                condition: 'average',
+                adjustments: { size: 0, condition: 0, location: 0, timing: 0 }
+            }
+        ],
         market: {},
         valuation: {},
         valuer: {},
@@ -70,8 +136,14 @@ function startNewValuation() {
     document.getElementById('dashboardView').classList.add('hidden');
     document.getElementById('valuationView').classList.remove('hidden');
 
-    // Reset form
+    // Reset form fields EXCEPT the default values in Step 6
     document.querySelectorAll('input, select, textarea').forEach(field => {
+        // Skip the Step 6 default fields
+        if (field.id === 'valuerName' || field.id === 'valuerQualification' ||
+            field.id === 'companyName' || field.id === 'companyAddress') {
+            return; // Keep default values
+        }
+
         if (field.type === 'checkbox' || field.type === 'radio') {
             field.checked = false;
         } else {
@@ -85,10 +157,29 @@ function startNewValuation() {
 }
 
 function returnToDashboard() {
-    document.getElementById('valuationView').classList.add('hidden');
-    document.getElementById('dashboardView').classList.remove('hidden');
+    saveDraft(); // Auto-save before leaving
+
+    // Hide valuation view
+    const valuationView = document.getElementById('valuationView');
+    if (valuationView) {
+        valuationView.classList.add('hidden');
+    }
+
+    // Show dashboard view
+    const dashboardView = document.getElementById('dashboardView');
+    if (dashboardView) {
+        dashboardView.classList.remove('hidden');
+    }
+
+    // Reload and render
     loadReports();
-    renderDashboard();
+
+    // Restore filters with a small delay to ensure DOM is ready
+    setTimeout(() => {
+        restoreDashboardFilters();
+    }, 50);
+
+    window.scrollTo(0, 0);
 }
 
 function loadReports() {
@@ -107,7 +198,15 @@ function saveReport() {
         allReports.push(valuationData);
     }
 
-    localStorage.setItem('ricsValuationReports', JSON.stringify(allReports));
+    try {
+        localStorage.setItem('ricsValuationReports', JSON.stringify(allReports));
+    } catch (e) {
+        console.error('Failed to save report to localStorage:', e);
+        // If storage quota exceeded, try saving without the photo
+        if (e.name === 'QuotaExceededError' || e.code === 22) {
+            alert('The photo is too large to save. Please use a smaller image or remove the photo.');
+        }
+    }
 }
 
 function loadReport(id) {
@@ -126,18 +225,48 @@ function loadReport(id) {
 }
 
 function deleteReport(id) {
+    console.log('Delete report called with ID:', id);
+    console.log('Current reports:', allReports);
+
     if (confirm('Are you sure you want to delete this valuation report?')) {
+        const beforeCount = allReports.length;
         allReports = allReports.filter(r => r.id !== id);
+        const afterCount = allReports.length;
+
+        console.log(`Reports before: ${beforeCount}, after: ${afterCount}`);
+
+        if (beforeCount === afterCount) {
+            alert('Error: Report not found or could not be deleted');
+            console.error('Report ID not found:', id);
+            return;
+        }
+
         localStorage.setItem('ricsValuationReports', JSON.stringify(allReports));
-        renderDashboard();
+        console.log('Report deleted successfully');
+
+        // Force hard reload to clear cache
+        window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now();
     }
 }
 
-function renderDashboard() {
+// Delete current report from within the valuation form
+function deleteCurrentReport() {
+    if (!currentValuationId) {
+        alert('No report to delete');
+        return;
+    }
+
+    if (confirm('Are you sure you want to delete this valuation report? This cannot be undone.')) {
+        deleteReport(currentValuationId);
+    }
+}
+
+function renderDashboard(data) {
+    const reports = data || allReports;
     const container = document.getElementById('reportsContainer');
     const emptyState = document.getElementById('emptyState');
 
-    if (allReports.length === 0) {
+    if (reports.length === 0) {
         container.innerHTML = '';
         emptyState.classList.remove('hidden');
         return;
@@ -147,11 +276,16 @@ function renderDashboard() {
 
     if (currentView === 'tile') {
         container.className = 'reports-grid';
-        container.innerHTML = allReports.map(report => createReportCard(report)).join('');
+        container.innerHTML = reports.map(report => createReportCard(report)).join('');
     } else {
         container.className = 'reports-list';
-        container.innerHTML = allReports.map(report => createReportListItem(report)).join('');
+        container.innerHTML = reports.map(report => createReportListItem(report)).join('');
     }
+}
+
+// Helper function to render dashboard with specific data (for filtering)
+function renderDashboardWithData(filteredData) {
+    renderDashboard(filteredData);
 }
 
 function createReportCard(report) {
@@ -240,7 +374,14 @@ function filterReports() {
     const statusFilter = document.getElementById('statusFilter').value;
     const dateRange = typeof getSelectedDateRange === 'function' ? getSelectedDateRange() : null;
 
-    let filtered = allReports;
+    // Save filter state to sessionStorage
+    sessionStorage.setItem('dashboardFilters', JSON.stringify({
+        search: searchTerm,
+        status: statusFilter,
+        dateRange: dateRange
+    }));
+
+    let filtered = allReports.slice(); // Create a copy, don't modify original
 
     // Search filter
     if (searchTerm) {
@@ -273,11 +414,45 @@ function filterReports() {
         filtered = filtered.filter(report => report.status === statusFilter);
     }
 
-    // Temporarily replace allReports for rendering
-    const originalReports = allReports;
-    allReports = filtered;
-    renderDashboard();
-    allReports = originalReports;
+    // Render with filtered data without modifying allReports
+    renderDashboardWithData(filtered);
+}
+
+// Restore dashboard filters when returning from a report
+function restoreDashboardFilters() {
+    const savedFilters = sessionStorage.getItem('dashboardFilters');
+    if (savedFilters) {
+        try {
+            const filters = JSON.parse(savedFilters);
+
+            // Restore search
+            if (filters.search && document.getElementById('searchInput')) {
+                document.getElementById('searchInput').value = filters.search;
+            }
+
+            // Restore status filter
+            if (filters.status && document.getElementById('statusFilter')) {
+                document.getElementById('statusFilter').value = filters.status;
+            }
+
+            // Restore date range if available
+            if (filters.dateRange && typeof dateRangePickerInstance !== 'undefined' && dateRangePickerInstance) {
+                // Flatpickr will be restored by the date picker itself
+            }
+
+            // Re-apply filters by calling filterReports
+            setTimeout(() => {
+                if (typeof filterReports === 'function') {
+                    filterReports();
+                }
+            }, 100);
+        } catch (e) {
+            console.error('Error restoring filters:', e);
+        }
+    } else {
+        // No saved filters, just render dashboard normally
+        renderDashboard();
+    }
 }
 
 // ============================================
@@ -285,14 +460,18 @@ function filterReports() {
 // ============================================
 
 function nextStep(step) {
-    if (!validateStep(step)) {
-        return;
-    }
+    // Validation disabled - allow free navigation through all steps
+    // if (!validateStep(step)) {
+    //     return;
+    // }
 
     saveStepData(step);
 
     if (step === 4) {
-        calculateValuation();
+        // Only calculate if in automatic mode
+        if (!valuationData.valuation || valuationData.valuation.mode !== 'manual') {
+            calculateValuation();
+        }
     }
 
     if (step === 5) {
@@ -312,6 +491,17 @@ function previousStep(step) {
     window.scrollTo(0, 0);
 }
 
+function goToStep(stepNumber) {
+    // Save current step data before navigating
+    saveStepData(currentStep);
+
+    // Jump directly to the clicked step
+    currentStep = stepNumber;
+    showStep(currentStep);
+    updateProgressBar();
+    window.scrollTo(0, 0);
+}
+
 function showStep(stepNumber) {
     document.querySelectorAll('.form-section').forEach(section => {
         section.classList.remove('active');
@@ -319,6 +509,11 @@ function showStep(stepNumber) {
     const stepElement = document.getElementById(`step${stepNumber}`);
     if (stepElement) {
         stepElement.classList.add('active');
+
+        // Restore valuation mode when showing Step 5
+        if (stepNumber === 5 && valuationData.valuation?.mode) {
+            toggleValuationMode(valuationData.valuation.mode);
+        }
     } else {
         console.error(`Step ${stepNumber} not found`);
     }
@@ -368,6 +563,33 @@ function validateStep(step) {
         isValid = false;
     }
 
+    // Step 5: Valuation validation
+    if (step === 5) {
+        const mode = valuationData.valuation?.mode || 'automatic';
+
+        if (!valuationData.valuation || !valuationData.valuation.estimatedValue) {
+            if (mode === 'manual') {
+                alert('Please enter a manual valuation amount and range.');
+            } else {
+                alert('Please calculate the valuation or switch to manual mode to enter your own valuation.');
+            }
+            return false;
+        }
+
+        // Validate manual mode inputs
+        if (mode === 'manual') {
+            if (!valuationData.valuation.lowerRange || !valuationData.valuation.upperRange) {
+                alert('Please enter both lower and upper range values for your manual valuation.');
+                return false;
+            }
+            if (valuationData.valuation.lowerRange >= valuationData.valuation.estimatedValue ||
+                valuationData.valuation.upperRange <= valuationData.valuation.estimatedValue) {
+                alert('The valuation range should have the lower value below and upper value above the estimated value.');
+                return false;
+            }
+        }
+    }
+
     if (!isValid) {
         alert('Please fill in all required fields before proceeding.');
     }
@@ -388,10 +610,13 @@ function saveStepData(step) {
                 borough: document.getElementById('borough').value,
                 type: document.getElementById('propertyType').value,
                 tenure: document.getElementById('tenure').value,
-                bedrooms: parseInt(document.getElementById('bedrooms').value) || 0,
+                bedrooms: parseInt(document.getElementById('propertyBedrooms').value) || 0,
                 bathrooms: parseInt(document.getElementById('bathrooms').value) || 0,
                 receptionRooms: parseInt(document.getElementById('receptionRooms').value) || 0,
+                area: parseInt(document.getElementById('propertyArea').value) || 0,
+                areaUnit: document.getElementById('propertyAreaUnit').value,
                 floorArea: parseInt(document.getElementById('floorArea').value) || 0,
+                floorAreaUnit: document.getElementById('floorAreaUnit').value,
                 yearBuilt: document.getElementById('yearBuilt').value,
                 condition: document.getElementById('propertyCondition').value
             };
@@ -455,10 +680,13 @@ function populateFormFields() {
         setFieldValue('borough', p.borough);
         setFieldValue('propertyType', p.type);
         setFieldValue('tenure', p.tenure);
-        setFieldValue('bedrooms', p.bedrooms);
+        setFieldValue('propertyBedrooms', p.bedrooms);
         setFieldValue('bathrooms', p.bathrooms);
         setFieldValue('receptionRooms', p.receptionRooms);
+        setFieldValue('propertyArea', p.area);
+        setFieldValue('propertyAreaUnit', p.areaUnit);
         setFieldValue('floorArea', p.floorArea);
+        setFieldValue('floorAreaUnit', p.floorAreaUnit);
         setFieldValue('yearBuilt', p.yearBuilt);
         setFieldValue('propertyCondition', p.condition);
     }
@@ -600,10 +828,18 @@ function renderComparables() {
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Floor Area (sq ft)</label>
-                        <input type="number" class="comp-area" data-id="${comp.id}" value="${comp.floorArea || ''}" 
-                               onchange="updateComparable('${comp.id}', 'floorArea', parseInt(this.value))" 
-                               placeholder="0" min="0">
+                        <label>Floor Area</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="number" class="comp-area" data-id="${comp.id}" value="${comp.floorArea || ''}" 
+                                   onchange="updateComparable('${comp.id}', 'floorArea', parseInt(this.value))" 
+                                   placeholder="0" min="0" style="flex: 1;">
+                            <select class="comp-area-unit" data-id="${comp.id}" 
+                                    onchange="updateComparable('${comp.id}', 'areaUnit', this.value)" 
+                                    style="width: 100px;">
+                                <option value="sqm" ${comp.areaUnit === 'sqm' || !comp.areaUnit ? 'selected' : ''}>sq m</option>
+                                <option value="sqft" ${comp.areaUnit === 'sqft' ? 'selected' : ''}>sq ft</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Bedrooms</label>
@@ -680,6 +916,81 @@ function updateComparableAdjustment(id, field, value) {
 }
 
 // ============================================
+// Valuation Mode Functions
+// ============================================
+
+function toggleValuationMode(mode) {
+    // Update button states
+    const autoBtn = document.getElementById('autoModeBtn');
+    const manualBtn = document.getElementById('manualModeBtn');
+    const autoContent = document.getElementById('automaticModeContent');
+    const manualContent = document.getElementById('manualModeContent');
+
+    if (mode === 'automatic') {
+        autoBtn.classList.add('active');
+        manualBtn.classList.remove('active');
+        autoContent.classList.remove('hidden');
+        manualContent.classList.add('hidden');
+
+        // Initialize valuation mode if not set
+        if (!valuationData.valuation) {
+            valuationData.valuation = {};
+        }
+        valuationData.valuation.mode = 'automatic';
+
+        // Recalculate if comparables exist
+        if (valuationData.comparables && valuationData.comparables.length > 0) {
+            calculateValuation();
+        }
+    } else {
+        autoBtn.classList.remove('active');
+        manualBtn.classList.add('active');
+        autoContent.classList.add('hidden');
+        manualContent.classList.remove('hidden');
+
+        // Initialize valuation mode
+        if (!valuationData.valuation) {
+            valuationData.valuation = {};
+        }
+        valuationData.valuation.mode = 'manual';
+
+        // Populate manual inputs if valuation exists
+        if (valuationData.valuation.estimatedValue) {
+            document.getElementById('manualValuation').value = valuationData.valuation.estimatedValue;
+            document.getElementById('manualLowerRange').value = valuationData.valuation.lowerRange;
+            document.getElementById('manualUpperRange').value = valuationData.valuation.upperRange;
+            updateManualValuation();
+        }
+    }
+
+    saveDraft();
+}
+
+function updateManualValuation() {
+    const manualValue = parseFloat(document.getElementById('manualValuation').value) || 0;
+    const lowerRange = parseFloat(document.getElementById('manualLowerRange').value) || 0;
+    const upperRange = parseFloat(document.getElementById('manualUpperRange').value) || 0;
+
+    // Update display
+    document.getElementById('manualValuationAmount').textContent = formatCurrency(manualValue);
+    document.getElementById('manualValuationRange').textContent =
+        `Range: ${formatCurrency(lowerRange)} - ${formatCurrency(upperRange)}`;
+
+    // Save to valuationData
+    if (!valuationData.valuation) {
+        valuationData.valuation = {};
+    }
+
+    valuationData.valuation.mode = 'manual';
+    valuationData.valuation.estimatedValue = manualValue;
+    valuationData.valuation.lowerRange = lowerRange;
+    valuationData.valuation.upperRange = upperRange;
+
+    saveDraft();
+}
+
+
+// ============================================
 // Valuation Calculation
 // ============================================
 
@@ -687,7 +998,8 @@ function calculateValuation() {
     const comparables = valuationData.comparables.filter(comp => comp.salePrice > 0);
 
     if (comparables.length === 0) {
-        alert('Please add at least one comparable property with a sale price.');
+        // Skip calculation if no comparables - allow navigation
+        console.log('No comparables added yet - skipping automatic calculation');
         return;
     }
 
@@ -788,9 +1100,9 @@ function displayValuation() {
 // ============================================
 
 function populateReviewSummary() {
-    const p = valuationData.property;
-    const i = valuationData.inspection;
-    const v = valuationData.valuation;
+    const p = window.valuationData?.property || valuationData.property;
+    const i = window.valuationData?.inspection || valuationData.inspection;
+    const v = window.valuationData?.valuation || valuationData.valuation;
 
     const summaryHTML = `
         <div class="card">
@@ -885,20 +1197,99 @@ async function generatePDF(bypassValidation = false) {
     const leftMargin = 20;
     const pageWidth = 170;
 
-    // Header
-    doc.setFillColor(0, 61, 130);
-    doc.rect(0, 0, 210, 40, 'F');
+    // ============================================
+    // COVER PAGE - Professional White Design
+    // ============================================
 
+    // White background
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, 210, 297, 'F');
+
+    // Load logo asynchronously
+    try {
+        await new Promise((resolve) => {
+            const logoImg = new Image();
+            logoImg.onload = () => {
+                const logoWidth = 70;
+                const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
+                const logoX = (210 - logoWidth) / 2;
+                doc.addImage(logoImg, 'JPEG', logoX, 15, logoWidth, logoHeight);
+                console.log('✓ Logo added to PDF');
+                resolve();
+            };
+            logoImg.onerror = () => {
+                console.log('✗ Logo failed to load');
+                resolve();
+            };
+            logoImg.src = 'logo.jpg';
+            setTimeout(resolve, 2000);
+        });
+    } catch (error) {
+        console.log('✗ Logo error:', error);
+    }
+
+    // Blue header bar
+    doc.setFillColor(0, 61, 130);
+    doc.rect(0, 50, 210, 35, 'F');
+
+    // Title in white on blue bar
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(24);
+    doc.setFontSize(22);
     doc.setFont(undefined, 'bold');
-    doc.text('RICS RED BOOK VALUATION REPORT', leftMargin, 20);
+    doc.text('RICS RED BOOK VALUATION REPORT', 105, 65, { align: 'center' });
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'normal');
+    doc.text('Professional Property Valuation', 105, 75, { align: 'center' });
+
+    // Reset to black text
+    doc.setTextColor(0, 0, 0);
+
+    // Property Photo (if available)
+    if (valuationData.photo) {
+        try {
+            const photoWidth = 80;   // Portrait width
+            const photoHeight = 120; // Portrait height
+            const photoX = (210 - photoWidth) / 2;
+            const photoY = 100;
+
+            // Add border around photo
+            doc.setDrawColor(200, 200, 200);
+            doc.setLineWidth(0.5);
+            doc.rect(photoX - 1, photoY - 1, photoWidth + 2, photoHeight + 2, 'S');
+
+            doc.addImage(valuationData.photo, 'JPEG', photoX, photoY, photoWidth, photoHeight);
+        } catch (error) {
+            console.log('Property photo not added:', error);
+        }
+    }
+
+    // Property Details Box
+    const detailsY = valuationData.photo ? 245 : 120;
+
+    // Property Address
+    doc.setFontSize(16);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(0, 61, 130);
+    doc.text(p.address || 'Property Address', 105, detailsY, { align: 'center' });
 
     doc.setFontSize(12);
     doc.setFont(undefined, 'normal');
-    doc.text('Professional Property Valuation - London, UK', leftMargin, 30);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`${p.postcode || ''} | ${p.borough || ''}`, 105, detailsY + 8, { align: 'center' });
 
-    yPos = 50;
+    // Valuation Date
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Valuation Date: ${formatDate(i.valuationDate)}`, 105, detailsY + 18, { align: 'center' });
+
+    // Footer
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text('Prepared in accordance with RICS Valuation - Global Standards (Red Book)', 105, 285, { align: 'center' });
+
+    // Start new page for content
+    doc.addPage();
+    yPos = 20;
     doc.setTextColor(0, 0, 0);
 
     // Property Details Section
@@ -1032,14 +1423,40 @@ async function generatePDF(bypassValidation = false) {
     doc.setFont(undefined, 'normal');
     doc.setTextColor(0, 0, 0);
 
-    doc.text(`Number of Comparables Analyzed: ${v.comparableCount}`, leftMargin, yPos);
-    yPos += 6;
-    doc.text(`Average Comparable Value: ${formatCurrency(v.averageComparable)}`, leftMargin, yPos);
-    yPos += 6;
-    doc.text(`Market Adjustment Factor: ${((v.marketAdjustment - 1) * 100).toFixed(1)}%`, leftMargin, yPos);
-    yPos += 6;
-    doc.text(`Price per Square Foot: ${formatCurrency(Math.round(v.estimatedValue / p.floorArea))}`, leftMargin, yPos);
-    yPos += 15;
+    // Valuation Method Indicator
+    const valuationMode = v.mode || 'automatic';
+    doc.setFont(undefined, 'bold');
+    doc.setFillColor(valuationMode === 'manual' ? 197 : 0, valuationMode === 'manual' ? 165 : 61, valuationMode === 'manual' ? 114 : 130);
+    doc.rect(leftMargin - 5, yPos - 3, 60, 8, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(9);
+    doc.text(`METHOD: ${valuationMode.toUpperCase()}`, leftMargin, yPos + 2);
+    doc.setTextColor(0, 0, 0);
+    yPos += 12;
+
+    // Show calculation details only for automatic mode
+    if (valuationMode === 'automatic' && v.comparableCount) {
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(10);
+        doc.text(`Number of Comparables Analyzed: ${v.comparableCount}`, leftMargin, yPos);
+        yPos += 6;
+        doc.text(`Average Comparable Value: ${formatCurrency(v.averageComparable)}`, leftMargin, yPos);
+        yPos += 6;
+        doc.text(`Market Adjustment Factor: ${((v.marketAdjustment - 1) * 100).toFixed(1)}%`, leftMargin, yPos);
+        yPos += 6;
+        doc.text(`Price per Square Foot: ${formatCurrency(Math.round(v.estimatedValue / p.floorArea))}`, leftMargin, yPos);
+        yPos += 15;
+    } else if (valuationMode === 'manual') {
+        doc.setFont(undefined, 'italic');
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.text('Valuation determined by professional judgment based on comparable analysis.', leftMargin, yPos);
+        yPos += 6;
+        doc.text(`Price per Square Foot: ${formatCurrency(Math.round(v.estimatedValue / p.floorArea))}`, leftMargin, yPos);
+        yPos += 15;
+        doc.setTextColor(0, 0, 0);
+        doc.setFont(undefined, 'normal');
+    }
 
     // Opinion of Value - Highlighted Box
     doc.setFillColor(0, 61, 130);
@@ -1197,6 +1614,36 @@ function formatDate(dateString) {
 // Photo Upload Functions
 // ============================================
 
+// Initialize photo upload click handler reliably
+function initializePhotoUpload() {
+    const zone = document.getElementById('photoUploadZone');
+    const fileInput = document.getElementById('photoFileInput');
+
+    if (zone && fileInput) {
+        // Remove any existing inline onclick to prevent double-firing
+        zone.removeAttribute('onclick');
+
+        // Add robust click handler
+        zone.addEventListener('click', function (event) {
+            // Prevent triggering if clicking remove button or already previewing
+            if (event.target.closest('.btn-remove-photo') || event.target.closest('.photo-preview:not(.hidden)')) {
+                return;
+            }
+            fileInput.click();
+        });
+
+        console.log('Photo upload zone initialized');
+    }
+}
+
+// Call initialization when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializePhotoUpload);
+} else {
+    // DOM already loaded, initialize now
+    setTimeout(initializePhotoUpload, 100);
+}
+
 function handlePhotoDragOver(event) {
     event.preventDefault();
     event.stopPropagation();
@@ -1233,13 +1680,79 @@ function processPhotoFile(file) {
         return;
     }
 
+    // Compress and resize image to prevent localStorage quota issues
+    const maxWidth = 800;
+    const maxHeight = 600;
+    const quality = 0.7;
+
     const reader = new FileReader();
     reader.onload = function (e) {
-        valuationData.photo = e.target.result;
-        displayPhotoPreview(e.target.result);
-        saveDraft();
+        const img = new Image();
+        img.onload = function () {
+            // Create canvas for resizing
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            // Calculate new dimensions
+            if (width > maxWidth || height > maxHeight) {
+                const ratio = Math.min(maxWidth / width, maxHeight / height);
+                width = Math.round(width * ratio);
+                height = Math.round(height * ratio);
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            // Draw and compress
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Convert to compressed JPEG
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+
+            valuationData.photo = compressedDataUrl;
+            displayPhotoPreview(compressedDataUrl);
+            saveDraft();
+
+            console.log('Photo compressed and saved. Original size: ' + Math.round(e.target.result.length / 1024) + 'KB, Compressed: ' + Math.round(compressedDataUrl.length / 1024) + 'KB');
+        };
+        img.onerror = function () {
+            console.error('Failed to load image for compression');
+            // Fallback to original if compression fails
+            valuationData.photo = e.target.result;
+            displayPhotoPreview(e.target.result);
+            saveDraft();
+        };
+        img.src = e.target.result;
+    };
+    reader.onerror = function () {
+        console.error('Failed to read photo file');
+        alert('Failed to read the photo file. Please try again.');
     };
     reader.readAsDataURL(file);
+}
+
+// Remove property photo
+function removePropertyPhoto() {
+    if (confirm('Are you sure you want to remove the property photo?')) {
+        valuationData.photo = null;
+
+        // Clear the file input
+        const photoInput = document.getElementById('photoFileInput');
+        if (photoInput) {
+            photoInput.value = '';
+        }
+
+        // Hide the preview
+        const preview = document.getElementById('photoPreview');
+        if (preview) {
+            preview.style.display = 'none';
+            preview.innerHTML = '';
+        }
+
+        console.log('Property photo removed');
+    }
 }
 
 function displayPhotoPreview(dataUrl) {
@@ -1247,15 +1760,42 @@ function displayPhotoPreview(dataUrl) {
     const content = document.getElementById('photoUploadContent');
     const removeBtn = document.getElementById('removePhotoBtn');
 
-    preview.src = dataUrl;
-    preview.classList.remove('hidden');
-    content.classList.add('hidden');
-    removeBtn.classList.remove('hidden');
+    if (preview) {
+        preview.src = dataUrl;
+        preview.classList.remove('hidden');
+    }
+    if (content) {
+        content.classList.add('hidden');
+    }
+    if (removeBtn) {
+        removeBtn.classList.remove('hidden');
+    }
 }
 
 function removePhoto() {
     valuationData.photo = null;
     resetPhotoUpload();
     saveDraft();
+}
+
+function resetPhotoUpload() {
+    const preview = document.getElementById('photoPreview');
+    const content = document.getElementById('photoUploadContent');
+    const removeBtn = document.getElementById('removePhotoBtn');
+    const fileInput = document.getElementById('photoFileInput');
+
+    if (preview) {
+        preview.src = '';
+        preview.classList.add('hidden');
+    }
+    if (content) {
+        content.classList.remove('hidden');
+    }
+    if (removeBtn) {
+        removeBtn.classList.add('hidden');
+    }
+    if (fileInput) {
+        fileInput.value = '';
+    }
 }
 

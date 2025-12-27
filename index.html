@@ -15,7 +15,7 @@
     <!-- Flatpickr Date Picker -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="enhancements.js"></script>
     <script>
@@ -30,6 +30,9 @@
 </head>
 
 <body>
+    <!-- Hidden logo for PDF generation -->
+    <img id="pdfLogo" src="logo.jpg" style="display: none;" crossorigin="anonymous">
+
     <div class="app-container">
         <!-- Header -->
         <header class="header">
@@ -95,8 +98,12 @@
         <!-- Valuation Form View -->
         <div id="valuationView" class="valuation-view hidden">
             <div class="valuation-header">
-                <button type="button" class="btn btn-secondary" onclick="returnToDashboard()">← Back to
-                    Dashboard</button>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn btn-secondary" onclick="returnToDashboard()">← Back to
+                        Dashboard</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteCurrentReport()">🗑️ Delete
+                        Report</button>
+                </div>
                 <h2 id="valuationTitle">New Valuation</h2>
             </div>
 
@@ -108,27 +115,27 @@
                         <div class="progress-line">
                             <div class="progress-line-fill" id="progressFill"></div>
                         </div>
-                        <div class="progress-step active" data-step="1">
+                        <div class="progress-step active" data-step="1" onclick="goToStep(1)" style="cursor: pointer;">
                             <div class="progress-step-circle">1</div>
                             <div class="progress-step-label">Property Details</div>
                         </div>
-                        <div class="progress-step" data-step="2">
+                        <div class="progress-step" data-step="2" onclick="goToStep(2)" style="cursor: pointer;">
                             <div class="progress-step-circle">2</div>
                             <div class="progress-step-label">Inspection</div>
                         </div>
-                        <div class="progress-step" data-step="3">
+                        <div class="progress-step" data-step="3" onclick="goToStep(3)" style="cursor: pointer;">
                             <div class="progress-step-circle">3</div>
                             <div class="progress-step-label">Comparables</div>
                         </div>
-                        <div class="progress-step" data-step="4">
+                        <div class="progress-step" data-step="4" onclick="goToStep(4)" style="cursor: pointer;">
                             <div class="progress-step-circle">4</div>
                             <div class="progress-step-label">Market Analysis</div>
                         </div>
-                        <div class="progress-step" data-step="5">
+                        <div class="progress-step" data-step="5" onclick="goToStep(5)" style="cursor: pointer;">
                             <div class="progress-step-circle">5</div>
                             <div class="progress-step-label">Valuation</div>
                         </div>
-                        <div class="progress-step" data-step="6">
+                        <div class="progress-step" data-step="6" onclick="goToStep(6)" style="cursor: pointer;">
                             <div class="progress-step-circle">6</div>
                             <div class="progress-step-label">Review & Report</div>
                         </div>
@@ -222,9 +229,23 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="bedrooms" class="label-required">Number of Bedrooms</label>
-                            <input type="number" id="bedrooms" min="0" max="20" required>
+                            <label for="propertyBedrooms" class="label-required">Bedrooms</label>
+                            <input type="number" id="propertyBedrooms" min="0" placeholder="Number of bedrooms"
+                                required>
                         </div>
+                        <div class="form-group">
+                            <label for="propertyArea" class="label-required">Area</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="number" id="propertyArea" min="0" placeholder="Property area"
+                                    style="flex: 1;" required>
+                                <select id="propertyAreaUnit" style="width: 120px;">
+                                    <option value="sqm" selected>sq m</option>
+                                    <option value="sqft">sq ft</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
                         <div class="form-group">
                             <label for="bathrooms" class="label-required">Number of Bathrooms</label>
                             <input type="number" id="bathrooms" min="0" max="10" required>
@@ -234,11 +255,18 @@
                             <input type="number" id="receptionRooms" min="0" max="10">
                         </div>
                     </div>
-
+                    
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="floorArea" class="label-required">Internal Floor Area (sq ft)</label>
-                            <input type="number" id="floorArea" min="0" step="1" required>
+                            <label for="floorArea" class="label-required">Internal Floor Area</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="number" id="floorArea" min="0" placeholder="Floor area"
+                                    style="flex: 1;" required>
+                                <select id="floorAreaUnit" style="width: 120px;">
+                                    <option value="sqm" selected>sq m</option>
+                                    <option value="sqft">sq ft</option>
+                                </select>
+                            </div>
                             <span class="input-hint">Total internal floor area</span>
                         </div>
                         <div class="form-group">
@@ -247,42 +275,45 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="propertyCondition" class="label-required">Property Condition</label>
-                        <select id="propertyCondition" required>
-                            <option value="">Select Condition</option>
-                            <option value="Excellent">Excellent - Recently renovated/new build</option>
-                            <option value="Good">Good - Well maintained, no major works needed</option>
-                            <option value="Fair">Fair - Some maintenance required</option>
-                            <option value="Poor">Poor - Significant works required</option>
-                        </select>
-                    </div>
-
-                    <!-- Property Photo Upload -->
-                    <div class="form-group">
-                        <label>Property Photo</label>
-                        <div class="photo-upload-zone" id="photoUploadZone" ondrop="handlePhotoDrop(event)"
-                            ondragover="handlePhotoDragOver(event)" ondragleave="handlePhotoDragLeave(event)"
-                            onclick="document.getElementById('photoFileInput').click()">
-                            <div class="photo-upload-content" id="photoUploadContent">
-                                <div class="photo-upload-icon">📷</div>
-                                <p class="photo-upload-text">Drag and drop a property photo here</p>
-                                <p class="photo-upload-subtext">or click to browse</p>
-                                <p class="photo-upload-hint">Recommended: High-quality exterior or interior photo</p>
-                            </div>
-                            <img id="photoPreview" class="photo-preview hidden" alt="Property photo preview">
-                            <input type="file" id="photoFileInput" accept="image/*" style="display: none;"
-                                onchange="handlePhotoSelect(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="propertyCondition" class="label-required">Property Condition</label>
+                            <select id="propertyCondition" required>
+                                <option value="">Select Condition</option>
+                                <option value="Excellent">Excellent - Recently renovated/new build</option>
+                                <option value="Good">Good - Well maintained, no major works needed</option>
+                                <option value="Fair">Fair - Some maintenance required</option>
+                                <option value="Poor">Poor - Significant works required</option>
+                            </select>
                         </div>
-                        <button type="button" class="btn-remove-photo hidden" id="removePhotoBtn"
-                            onclick="removePhoto()">Remove Photo</button>
                     </div>
 
-                    <div class="button-group">
-                        <button type="button" class="btn btn-secondary" onclick="saveDraft()">Save Draft</button>
-                        <button type="button" class="btn btn-primary" onclick="nextStep(1)">Next: Inspection Details
-                            →</button>
-                    </div>
+                        <!-- Property Photo Upload -->
+                        <div class="form-group">
+                            <label>Property Photo</label>
+                            <div class="photo-upload-zone" id="photoUploadZone" ondrop="handlePhotoDrop(event)"
+                                ondragover="handlePhotoDragOver(event)" ondragleave="handlePhotoDragLeave(event)"
+                                onclick="document.getElementById('photoFileInput').click()">
+                                <div class="photo-upload-content" id="photoUploadContent">
+                                    <div class="photo-upload-icon">📷</div>
+                                    <p class="photo-upload-text">Drag and drop a property photo here</p>
+                                    <p class="photo-upload-subtext">or click to browse</p>
+                                    <p class="photo-upload-hint">Recommended: High-quality exterior or interior photo
+                                    </p>
+                                </div>
+                                <img id="photoPreview" class="photo-preview hidden" alt="Property photo preview">
+                                <input type="file" id="photoFileInput" accept="image/*" style="display: none;"
+                                    onchange="handlePhotoSelect(event)">
+                            </div>
+                            <button type="button" class="btn-remove-photo hidden" id="removePhotoBtn"
+                                onclick="removePhoto()">Remove Photo</button>
+                        </div>
+
+                        <div class="button-group">
+                            <button type="button" class="btn btn-secondary" onclick="saveDraft()">Save Draft</button>
+                            <button type="button" class="btn btn-primary" onclick="nextStep(1)">Next: Inspection Details
+                                →</button>
+                        </div>
                 </section>
 
                 <!-- Step 2: Inspection Details -->
@@ -456,20 +487,79 @@
                 <!-- Step 5: Valuation Calculation -->
                 <section class="form-section" id="step5">
                     <h2>Step 5: Valuation Calculation</h2>
-                    <div class="info-panel">
-                        <p><strong>Comparable Method:</strong> The valuation is calculated by analyzing comparable
-                            properties and applying adjustments based on differences in size, condition, location, and
-                            market timing.</p>
+
+                    <!-- Mode Toggle -->
+                    <div class="valuation-mode-toggle">
+                        <label class="mode-label">Valuation Method:</label>
+                        <div class="mode-buttons">
+                            <button type="button" class="mode-btn active" id="autoModeBtn"
+                                onclick="toggleValuationMode('automatic')">
+                                <span class="mode-icon">🤖</span>
+                                <span>Automatic</span>
+                            </button>
+                            <button type="button" class="mode-btn" id="manualModeBtn"
+                                onclick="toggleValuationMode('manual')">
+                                <span class="mode-icon">✍️</span>
+                                <span>Manual</span>
+                            </button>
+                        </div>
                     </div>
 
-                    <div id="calculationSummary" class="summary-grid">
-                        <!-- Calculation summary will be populated here -->
+                    <!-- Automatic Mode Content -->
+                    <div id="automaticModeContent" class="mode-content">
+                        <div class="info-panel">
+                            <p><strong>Comparable Method:</strong> The valuation is calculated by analyzing comparable
+                                properties and applying adjustments based on differences in size, condition, location,
+                                and
+                                market timing.</p>
+                        </div>
+
+                        <div id="calculationSummary" class="summary-grid">
+                            <!-- Calculation summary will be populated here -->
+                        </div>
+
+                        <div class="valuation-result" id="valuationResult">
+                            <h2>Estimated Market Value</h2>
+                            <div class="valuation-amount" id="valuationAmount">£0</div>
+                            <div class="valuation-range" id="valuationRange">Range: £0 - £0</div>
+                        </div>
                     </div>
 
-                    <div class="valuation-result" id="valuationResult">
-                        <h2>Estimated Market Value</h2>
-                        <div class="valuation-amount" id="valuationAmount">£0</div>
-                        <div class="valuation-range" id="valuationRange">Range: £0 - £0</div>
+                    <!-- Manual Mode Content -->
+                    <div id="manualModeContent" class="mode-content hidden">
+                        <div class="info-panel info-panel-manual">
+                            <p><strong>Manual Valuation:</strong> Enter your own valuation based on your professional
+                                analysis of the comparables and market conditions. Ensure you provide detailed
+                                justification in the notes below.</p>
+                        </div>
+
+                        <div class="manual-valuation-inputs">
+                            <div class="form-group">
+                                <label for="manualValuation" class="label-required">Estimated Market Value (£)</label>
+                                <input type="number" id="manualValuation" placeholder="e.g., 500000" min="0" step="1000"
+                                    oninput="updateManualValuation()">
+                                <span class="input-hint">Enter the valuation amount in pounds</span>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="manualLowerRange" class="label-required">Lower Range (£)</label>
+                                    <input type="number" id="manualLowerRange" placeholder="e.g., 475000" min="0"
+                                        step="1000" oninput="updateManualValuation()">
+                                </div>
+                                <div class="form-group">
+                                    <label for="manualUpperRange" class="label-required">Upper Range (£)</label>
+                                    <input type="number" id="manualUpperRange" placeholder="e.g., 525000" min="0"
+                                        step="1000" oninput="updateManualValuation()">
+                                </div>
+                            </div>
+
+                            <div class="valuation-result manual-result" id="manualValuationDisplay">
+                                <h2>Your Valuation</h2>
+                                <div class="valuation-amount" id="manualValuationAmount">£0</div>
+                                <div class="valuation-range" id="manualValuationRange">Range: £0 - £0</div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -511,22 +601,26 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="valuerName" class="label-required">Valuer Name</label>
-                            <input type="text" id="valuerName" placeholder="Full name" required>
+                            <input type="text" id="valuerName" value="Ross Richards" placeholder="Full name" required>
                         </div>
                         <div class="form-group">
                             <label for="valuerQualification" class="label-required">Qualification</label>
-                            <input type="text" id="valuerQualification" placeholder="e.g., MRICS, FRICS" required>
+                            <input type="text" id="valuerQualification" value="BEng(Hons), AssocRICS, MCIOB, MRPSA."
+                                placeholder="e.g., MRICS, FRICS" required>
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label for="companyName" class="label-required">Company Name</label>
-                            <input type="text" id="companyName" placeholder="Valuation company name" required>
+                            <input type="text" id="companyName" value="Surveying People"
+                                placeholder="Valuation company name" required>
                         </div>
                         <div class="form-group">
                             <label for="companyAddress">Company Address</label>
-                            <input type="text" id="companyAddress" placeholder="Company address">
+                            <input type="text" id="companyAddress"
+                                value="6th Floor, 200 First Central,  2 Lakeside Drive, Park Royal,  London, NW10 7FQ"
+                                placeholder="Company address">
                         </div>
                     </div>
 
