@@ -1,0 +1,465 @@
+/* ============================================
+   Dashboard Layout Overrides
+   ============================================ */
+
+.header-logo-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 1rem !important;
+}
+
+.header-logo {
+    height: 100px !important;
+    width: auto !important;
+    background: white !important;
+    padding: 8px !important;
+    border-radius: 8px !important;
+}
+
+.logout-btn {
+    padding: 0.75rem 1.5rem !important;
+    background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-light) 100%) !important;
+    color: #1a1a1a !important;
+    border: none !important;
+    border-radius: var(--radius-md) !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 2px 4px rgba(197, 165, 114, 0.3) !important;
+}
+
+.logout-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(197, 165, 114, 0.4) !important;
+    background: linear-gradient(135deg, var(--accent-gold-light) 0%, var(--accent-gold) 100%) !important;
+}
+
+.logout-btn:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 1px 2px rgba(197, 165, 114, 0.3) !important;
+}
+
+
+.search-filter-bar {
+    display: flex !important;
+    gap: 1rem !important;
+    align-items: center !important;
+    margin-bottom: 2rem !important;
+    flex-wrap: nowrap !important;
+}
+
+.search-box {
+    flex: 1 1 auto !important;
+    margin-bottom: 0 !important;
+    min-width: 200px !important;
+}
+
+.filter-controls {
+    display: flex !important;
+    gap: 0.75rem !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    flex-shrink: 0 !important;
+}
+
+/* ============================================
+   Date Picker Styling
+   ============================================ */
+
+.date-picker-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.date-picker-wrapper input {
+    padding-right: 2.5rem !important;
+    cursor: pointer;
+}
+
+.calendar-icon {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    font-size: 1.2rem;
+}
+
+/* ============================================
+   Single View Toggle Button
+   ============================================ */
+
+.view-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-light) 100%);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.view-toggle-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* ============================================
+   Status Dropdown Styling (Dashboard)
+   ============================================ */
+
+.report-status-select {
+    padding: 0.5rem 0.75rem;
+    border: 2px solid transparent;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.report-status-select:hover {
+    border-color: var(--primary-blue);
+}
+
+.report-status-select.working {
+    background-color: #fff8e1;
+    color: #f57c00;
+}
+
+.report-status-select.complete {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.report-status-select.archive {
+    background-color: #f5f5f5;
+    color: #666;
+}
+
+/* ============================================
+   In-Form Status Dropdown Styling
+   ============================================ */
+
+#reportStatus {
+    font-weight: 600;
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+    border: 2px solid var(--gray-300);
+    border-radius: var(--radius-md);
+    background: var(--white);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#reportStatus:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(0, 61, 130, 0.1);
+}
+
+#reportStatus option[value="working"] {
+    background-color: #fff8e1;
+}
+
+#reportStatus option[value="complete"] {
+    background-color: #e8f5e9;
+}
+
+#reportStatus option[value="archive"] {
+    background-color: #f5f5f5;
+}
+
+/* ============================================
+   Valuation Mode Toggle
+   ============================================ */
+
+.valuation-mode-toggle {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: var(--radius-md);
+    border: 2px solid var(--gray-200);
+}
+
+.mode-label {
+    display: block;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--primary-blue);
+    margin-bottom: 1rem;
+}
+
+.mode-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.mode-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background: white;
+    border: 2px solid var(--gray-300);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.mode-btn:hover {
+    border-color: var(--primary-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 61, 130, 0.15);
+}
+
+.mode-btn.active {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-light) 100%);
+    border-color: var(--primary-blue);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 61, 130, 0.3);
+}
+
+.mode-icon {
+    font-size: 1.5rem;
+}
+
+/* ============================================
+   Mode Content Sections
+   ============================================ */
+
+.mode-content {
+    animation: fadeIn 0.3s ease;
+}
+
+.mode-content.hidden {
+    display: none;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   Manual Valuation Inputs
+   ============================================ */
+
+.info-panel-manual {
+    background: linear-gradient(135deg, #fff8e1 0%, #fff3cd 100%);
+    border-left: 4px solid var(--accent-gold);
+}
+
+.manual-valuation-inputs {
+    margin-top: 1.5rem;
+}
+
+.manual-result {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 2px solid var(--accent-gold);
+}
+
+.manual-result h2 {
+    color: var(--primary-blue);
+}
+
+.manual-result .valuation-amount {
+    color: var(--accent-gold);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   Bottom Layout Fix - Ensure buttons visible
+   ============================================ */
+
+.form-section {
+    padding-bottom: 2rem;
+}
+
+.button-group {
+    margin-top: 1.5rem;
+    margin-bottom: 2rem;
+    padding: 1rem 0;
+}
+
+.button-group .btn {
+    min-height: 48px;
+    padding: 0.875rem 1.5rem;
+}
+
+/* ============================================
+   Mobile & Tablet Responsiveness
+   ============================================ */
+
+@media (max-width: 1024px) {
+    .app-container {
+        padding: 1rem;
+    }
+    
+    .header {
+        padding: 1rem;
+    }
+    
+    .header-logo {
+        height: 60px !important;
+    }
+    
+    .main-content {
+        padding: 1rem;
+    }
+    
+    .search-filter-bar {
+        flex-wrap: wrap !important;
+        gap: 0.75rem !important;
+    }
+    
+    .search-box {
+        flex-basis: 100% !important;
+        order: 1;
+    }
+    
+    .filter-controls {
+        flex-basis: 100% !important;
+        order: 2;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Header */
+    .header-logo-row {
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+    
+    .header-logo {
+        height: 50px !important;
+    }
+    
+    .header h1 {
+        font-size: 1.5rem !important;
+    }
+    
+    .header-subtitle {
+        font-size: 0.9rem !important;
+    }
+    
+    /* Progress Steps */
+    .progress-steps {
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+    }
+    
+    .progress-step {
+        flex-basis: calc(33.33% - 0.5rem) !important;
+    }
+    
+    .progress-step-circle {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 0.875rem !important;
+    }
+    
+    .progress-step-label {
+        font-size: 0.7rem !important;
+    }
+    
+    /* Buttons */
+    .button-group {
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+    }
+    
+    .button-group .btn {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+    
+    /* Forms */
+    .form-row {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    /* Photo Upload */
+    .photo-upload-zone {
+        min-height: 120px !important;
+    }
+    
+    /* Dashboard Cards */
+    .report-card, .report-tile {
+        padding: 1rem !important;
+    }
+    
+    /* Navigation Buttons */
+    .valuation-header {
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+    
+    .valuation-header > div {
+        width: 100% !important;
+        justify-content: space-between !important;
+    }
+    
+    /* Valuation Mode Buttons */
+    .mode-buttons {
+        flex-direction: column !important;
+    }
+    
+    .mode-btn {
+        width: 100% !important;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Smaller screens */
+    .progress-step {
+        flex-basis: calc(50% - 0.5rem) !important;
+    }
+    
+    .btn {
+        font-size: 0.9rem !important;
+        padding: 0.75rem 1rem !important;
+    }
+    
+    label {
+        font-size: 0.875rem !important;
+    }
+    
+    input, select, textarea {
+        font-size: 16px !important; /* Prevents zoom on iOS */
+        padding: 0.65rem 0.75rem !important;
+    }
+    
+    .comparable-item {
+        padding: 0.75rem !important;
+    }
+    
+    .valuation-result {
+        padding: 1.5rem !important;
+    }
+    
+    .valuation-amount {
+        font-size: 2rem !important;
+    }
+}

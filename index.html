@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RICS Red Book Valuation - London Property Valuations</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="overrides.css">
+    <!-- Flatpickr Date Picker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="enhancements.js"></script>
+    <script>
+        // Check authentication on page load
+        window.addEventListener('DOMContentLoaded', function () {
+            const session = localStorage.getItem('ricsUserSession') || sessionStorage.getItem('ricsUserSession');
+            if (!session) {
+                window.location.href = 'login.html';
+            }
+        });
+    </script>
+</head>
+
+<body>
+    <!-- Hidden logo for PDF generation -->
+    <img id="pdfLogo" src="logo.jpg" style="display: none;" crossorigin="anonymous">
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-logo-row">
+                    <img src="logo.jpg" alt="Surveying People Logo" class="header-logo">
+                    <div>
+                        <h1>RICS Red Book Valuation</h1>
+                        <p class="header-subtitle">Professional Property Valuation System - London, UK</p>
+                    </div>
+                    <button class="logout-btn" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard View (Initial Screen) -->
+        <div id="dashboardView" class="dashboard-view">
+            <div class="dashboard-header">
+                <h2>Valuation Reports</h2>
+                <div class="dashboard-actions">
+                    <button type="button" class="btn btn-primary" onclick="startNewValuation()">+ New Valuation</button>
+                </div>
+            </div>
+
+            <!-- Search and Filter Bar -->
+            <div class="search-filter-bar">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search by property address, client, postcode..."
+                        onkeyup="filterReports()">
+                </div>
+                <div class="filter-controls">
+                    <div class="date-picker-wrapper">
+                        <input type="text" id="dateRangePicker" placeholder="Dates" readonly>
+                        <span class="calendar-icon">📅</span>
+                    </div>
+                    <select id="statusFilter" onchange="filterReports()">
+                        <option value="">Status</option>
+                        <option value="working">Working</option>
+                        <option value="complete">Complete</option>
+                        <option value="archive">Archive</option>
+                    </select>
+                    <button class="view-toggle-btn" onclick="toggleViewSingle()" title="Toggle View">
+                        <span id="viewIcon">⊞</span>
+                        <span id="viewLabel">Tile</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Reports Container -->
+            <div id="reportsContainer" class="reports-grid">
+                <!-- Reports will be dynamically loaded here -->
+            </div>
+
+            <div id="emptyState" class="empty-state hidden">
+                <div class="empty-state-icon">📋</div>
+                <h3>No Valuations Yet</h3>
+                <p>Create your first RICS Red Book valuation report to get started.</p>
+                <button type="button" class="btn btn-primary" onclick="startNewValuation()">Create First
+                    Valuation</button>
+            </div>
+        </div>
+
+        <!-- Valuation Form View -->
+        <div id="valuationView" class="valuation-view hidden">
+            <div class="valuation-header">
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn btn-secondary" onclick="returnToDashboard()">← Back to
+                        Dashboard</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteCurrentReport()">🗑️ Delete
+                        Report</button>
+                </div>
+                <h2 id="valuationTitle">New Valuation</h2>
+            </div>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- Progress Indicator -->
+                <div class="progress-container">
+                    <div class="progress-steps">
+                        <div class="progress-line">
+                            <div class="progress-line-fill" id="progressFill"></div>
+                        </div>
+                        <div class="progress-step active" data-step="1" onclick="goToStep(1)" style="cursor: pointer;">
+                            <div class="progress-step-circle">1</div>
+                            <div class="progress-step-label">Property Details</div>
+                        </div>
+                        <div class="progress-step" data-step="2" onclick="goToStep(2)" style="cursor: pointer;">
+                            <div class="progress-step-circle">2</div>
+                            <div class="progress-step-label">Inspection</div>
+                        </div>
+                        <div class="progress-step" data-step="3" onclick="goToStep(3)" style="cursor: pointer;">
+                            <div class="progress-step-circle">3</div>
+                            <div class="progress-step-label">Comparables</div>
+                        </div>
+                        <div class="progress-step" data-step="4" onclick="goToStep(4)" style="cursor: pointer;">
+                            <div class="progress-step-circle">4</div>
+                            <div class="progress-step-label">Market Analysis</div>
+                        </div>
+                        <div class="progress-step" data-step="5" onclick="goToStep(5)" style="cursor: pointer;">
+                            <div class="progress-step-circle">5</div>
+                            <div class="progress-step-label">Valuation</div>
+                        </div>
+                        <div class="progress-step" data-step="6" onclick="goToStep(6)" style="cursor: pointer;">
+                            <div class="progress-step-circle">6</div>
+                            <div class="progress-step-label">Review & Report</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 1: Property Details -->
+                <section class="form-section active" id="step1">
+                    <h2>Step 1: Property Details</h2>
+                    <div class="info-panel">
+                        <p><strong>RICS Red Book Compliance:</strong> All information must be accurate and verifiable.
+                            This valuation will be conducted in accordance with the RICS Valuation - Global Standards
+                            (Red Book).</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="propertyAddress" class="label-required">Property Address</label>
+                        <input type="text" id="propertyAddress" placeholder="e.g., 123 High Street, London" required>
+                        <span class="input-hint">Full street address including postcode</span>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="postcode" class="label-required">Postcode</label>
+                            <input type="text" id="postcode" placeholder="e.g., SW1A 1AA" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="borough" class="label-required">London Borough</label>
+                            <select id="borough" required>
+                                <option value="">Select Borough</option>
+                                <option value="Westminster">Westminster</option>
+                                <option value="Camden">Camden</option>
+                                <option value="Kensington and Chelsea">Kensington and Chelsea</option>
+                                <option value="Hammersmith and Fulham">Hammersmith and Fulham</option>
+                                <option value="Wandsworth">Wandsworth</option>
+                                <option value="Lambeth">Lambeth</option>
+                                <option value="Southwark">Southwark</option>
+                                <option value="Tower Hamlets">Tower Hamlets</option>
+                                <option value="Hackney">Hackney</option>
+                                <option value="Islington">Islington</option>
+                                <option value="Haringey">Haringey</option>
+                                <option value="Barnet">Barnet</option>
+                                <option value="Enfield">Enfield</option>
+                                <option value="Waltham Forest">Waltham Forest</option>
+                                <option value="Redbridge">Redbridge</option>
+                                <option value="Havering">Havering</option>
+                                <option value="Barking and Dagenham">Barking and Dagenham</option>
+                                <option value="Newham">Newham</option>
+                                <option value="Greenwich">Greenwich</option>
+                                <option value="Bexley">Bexley</option>
+                                <option value="Bromley">Bromley</option>
+                                <option value="Croydon">Croydon</option>
+                                <option value="Sutton">Sutton</option>
+                                <option value="Merton">Merton</option>
+                                <option value="Kingston upon Thames">Kingston upon Thames</option>
+                                <option value="Richmond upon Thames">Richmond upon Thames</option>
+                                <option value="Hounslow">Hounslow</option>
+                                <option value="Ealing">Ealing</option>
+                                <option value="Brent">Brent</option>
+                                <option value="Harrow">Harrow</option>
+                                <option value="Hillingdon">Hillingdon</option>
+                                <option value="Lewisham">Lewisham</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="propertyType" class="label-required">Property Type</label>
+                            <select id="propertyType" required>
+                                <option value="">Select Type</option>
+                                <option value="Detached House">Detached House</option>
+                                <option value="Semi-Detached House">Semi-Detached House</option>
+                                <option value="Terraced House">Terraced House</option>
+                                <option value="Flat/Apartment">Flat/Apartment</option>
+                                <option value="Maisonette">Maisonette</option>
+                                <option value="Bungalow">Bungalow</option>
+                                <option value="Studio">Studio</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="tenure" class="label-required">Tenure</label>
+                            <select id="tenure" required>
+                                <option value="">Select Tenure</option>
+                                <option value="Freehold">Freehold</option>
+                                <option value="Leasehold">Leasehold</option>
+                                <option value="Share of Freehold">Share of Freehold</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="propertyBedrooms" class="label-required">Bedrooms</label>
+                            <input type="number" id="propertyBedrooms" min="0" placeholder="Number of bedrooms"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label for="propertyArea" class="label-required">Area</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="number" id="propertyArea" min="0" placeholder="Property area"
+                                    style="flex: 1;" required>
+                                <select id="propertyAreaUnit" style="width: 120px;">
+                                    <option value="sqm" selected>sq m</option>
+                                    <option value="sqft">sq ft</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="bathrooms" class="label-required">Number of Bathrooms</label>
+                            <input type="number" id="bathrooms" min="0" max="10" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="receptionRooms">Reception Rooms</label>
+                            <input type="number" id="receptionRooms" min="0" max="10">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="floorArea" class="label-required">Internal Floor Area</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="number" id="floorArea" min="0" placeholder="Floor area"
+                                    style="flex: 1;" required>
+                                <select id="floorAreaUnit" style="width: 120px;">
+                                    <option value="sqm" selected>sq m</option>
+                                    <option value="sqft">sq ft</option>
+                                </select>
+                            </div>
+                            <span class="input-hint">Total internal floor area</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="yearBuilt">Year Built (Approximate)</label>
+                            <input type="number" id="yearBuilt" min="1700" max="2025">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="propertyCondition" class="label-required">Property Condition</label>
+                            <select id="propertyCondition" required>
+                                <option value="">Select Condition</option>
+                                <option value="Excellent">Excellent - Recently renovated/new build</option>
+                                <option value="Good">Good - Well maintained, no major works needed</option>
+                                <option value="Fair">Fair - Some maintenance required</option>
+                                <option value="Poor">Poor - Significant works required</option>
+                            </select>
+                        </div>
+                    </div>
+
+                        <!-- Property Photo Upload -->
+                        <div class="form-group">
+                            <label>Property Photo</label>
+                            <div class="photo-upload-zone" id="photoUploadZone" ondrop="handlePhotoDrop(event)"
+                                ondragover="handlePhotoDragOver(event)" ondragleave="handlePhotoDragLeave(event)"
+                                onclick="document.getElementById('photoFileInput').click()">
+                                <div class="photo-upload-content" id="photoUploadContent">
+                                    <div class="photo-upload-icon">📷</div>
+                                    <p class="photo-upload-text">Drag and drop a property photo here</p>
+                                    <p class="photo-upload-subtext">or click to browse</p>
+                                    <p class="photo-upload-hint">Recommended: High-quality exterior or interior photo
+                                    </p>
+                                </div>
+                                <img id="photoPreview" class="photo-preview hidden" alt="Property photo preview">
+                                <input type="file" id="photoFileInput" accept="image/*" style="display: none;"
+                                    onchange="handlePhotoSelect(event)">
+                            </div>
+                            <button type="button" class="btn-remove-photo hidden" id="removePhotoBtn"
+                                onclick="removePhoto()">Remove Photo</button>
+                        </div>
+
+                        <div class="button-group">
+                            <button type="button" class="btn btn-secondary" onclick="saveDraft()">Save Draft</button>
+                            <button type="button" class="btn btn-primary" onclick="nextStep(1)">Next: Inspection Details
+                                →</button>
+                        </div>
+                </section>
+
+                <!-- Step 2: Inspection Details -->
+                <section class="form-section" id="step2">
+                    <h2>Step 2: Inspection Details</h2>
+                    <div class="info-panel">
+                        <p><strong>RICS Requirement:</strong> Document the extent and limitations of the inspection
+                            conducted.</p>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="inspectionDate" class="label-required">Inspection Date</label>
+                            <input type="date" id="inspectionDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="valuationDate" class="label-required">Valuation Date</label>
+                            <input type="date" id="valuationDate" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="inspectionType" class="label-required">Extent of Inspection</label>
+                        <select id="inspectionType" required>
+                            <option value="">Select Inspection Type</option>
+                            <option value="External Only">External Inspection Only</option>
+                            <option value="Internal and External">Internal and External Inspection</option>
+                            <option value="Desktop">Desktop Valuation (No Inspection)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="inspectionLimitations">Inspection Limitations</label>
+                        <textarea id="inspectionLimitations"
+                            placeholder="e.g., Unable to access loft space, carpets not lifted, etc."></textarea>
+                        <span class="input-hint">Note any areas not inspected or limitations encountered</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="valuationPurpose" class="label-required">Purpose of Valuation</label>
+                        <select id="valuationPurpose" required>
+                            <option value="">Select Purpose</option>
+                            <option value="Mortgage">Mortgage/Lending</option>
+                            <option value="Sale">Sale/Purchase</option>
+                            <option value="Probate">Probate</option>
+                            <option value="Tax">Tax Purposes</option>
+                            <option value="Financial Reporting">Financial Reporting</option>
+                            <option value="Litigation">Litigation</option>
+                            <option value="Insurance">Insurance</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="valuationBasis" class="label-required">Basis of Valuation</label>
+                        <select id="valuationBasis" required>
+                            <option value="">Select Basis</option>
+                            <option value="Market Value">Market Value</option>
+                            <option value="Market Rent">Market Rent</option>
+                            <option value="Investment Value">Investment Value</option>
+                            <option value="Fair Value">Fair Value</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="assumptions">Assumptions</label>
+                        <textarea id="assumptions"
+                            placeholder="e.g., Good title, no deleterious materials, statutory approvals in place, etc."></textarea>
+                        <span class="input-hint">Standard and special assumptions made</span>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" class="btn btn-secondary" onclick="previousStep(2)">← Previous</button>
+                        <button type="button" class="btn btn-primary" onclick="nextStep(2)">Next: Comparable Properties
+                            →</button>
+                    </div>
+                </section>
+
+                <!-- Step 3: Comparable Properties -->
+                <section class="form-section" id="step3">
+                    <h2>Step 3: Comparable Evidence</h2>
+                    <div class="info-panel">
+                        <p><strong>Comparable Method:</strong> Provide details of at least 3 comparable properties that
+                            have recently sold or are currently on the market in the same area.</p>
+                    </div>
+
+                    <div id="comparablesList" class="comparable-list">
+                        <!-- Comparables will be added here dynamically -->
+                    </div>
+
+                    <button type="button" class="btn btn-add" onclick="addComparable()">+ Add Comparable
+                        Property</button>
+
+                    <div class="button-group">
+                        <button type="button" class="btn btn-secondary" onclick="previousStep(3)">← Previous</button>
+                        <button type="button" class="btn btn-primary" onclick="nextStep(3)">Next: Market Analysis
+                            →</button>
+                    </div>
+                </section>
+
+                <!-- Step 4: Market Analysis -->
+                <section class="form-section" id="step4">
+                    <h2>Step 4: Market Analysis</h2>
+                    <div class="info-panel">
+                        <p><strong>Market Context:</strong> Assess current market conditions and trends affecting the
+                            property value.</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="marketConditions" class="label-required">Current Market Conditions</label>
+                        <select id="marketConditions" required>
+                            <option value="">Select Market Conditions</option>
+                            <option value="Strong">Strong - High demand, rising prices</option>
+                            <option value="Stable">Stable - Balanced market</option>
+                            <option value="Weak">Weak - Low demand, falling prices</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="marketTrend">Market Trend (Last 12 Months)</label>
+                        <select id="marketTrend">
+                            <option value="">Select Trend</option>
+                            <option value="Increasing">Increasing (5%+)</option>
+                            <option value="Slightly Increasing">Slightly Increasing (0-5%)</option>
+                            <option value="Stable">Stable (±2%)</option>
+                            <option value="Slightly Decreasing">Slightly Decreasing (0-5%)</option>
+                            <option value="Decreasing">Decreasing (5%+)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="locationQuality" class="label-required">Location Quality</label>
+                        <select id="locationQuality" required>
+                            <option value="">Select Location Quality</option>
+                            <option value="Prime">Prime - Highly desirable area</option>
+                            <option value="Good">Good - Desirable area</option>
+                            <option value="Average">Average - Standard residential area</option>
+                            <option value="Below Average">Below Average - Less desirable area</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="transportLinks">Transport Links</label>
+                        <select id="transportLinks">
+                            <option value="">Select Transport Access</option>
+                            <option value="Excellent">Excellent - Multiple tube/rail stations within 5 mins</option>
+                            <option value="Good">Good - Tube/rail within 10 mins</option>
+                            <option value="Fair">Fair - Bus routes, tube/rail 15+ mins</option>
+                            <option value="Poor">Poor - Limited public transport</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="localAmenities">Local Amenities</label>
+                        <textarea id="localAmenities"
+                            placeholder="e.g., Schools, shops, parks, restaurants, etc."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="marketCommentary">Market Commentary</label>
+                        <textarea id="marketCommentary"
+                            placeholder="Additional market observations and analysis"></textarea>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" class="btn btn-secondary" onclick="previousStep(4)">← Previous</button>
+                        <button type="button" class="btn btn-primary" onclick="nextStep(4)">Next: Calculate Valuation
+                            →</button>
+                    </div>
+                </section>
+
+                <!-- Step 5: Valuation Calculation -->
+                <section class="form-section" id="step5">
+                    <h2>Step 5: Valuation Calculation</h2>
+
+                    <!-- Mode Toggle -->
+                    <div class="valuation-mode-toggle">
+                        <label class="mode-label">Valuation Method:</label>
+                        <div class="mode-buttons">
+                            <button type="button" class="mode-btn active" id="autoModeBtn"
+                                onclick="toggleValuationMode('automatic')">
+                                <span class="mode-icon">🤖</span>
+                                <span>Automatic</span>
+                            </button>
+                            <button type="button" class="mode-btn" id="manualModeBtn"
+                                onclick="toggleValuationMode('manual')">
+                                <span class="mode-icon">✍️</span>
+                                <span>Manual</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Automatic Mode Content -->
+                    <div id="automaticModeContent" class="mode-content">
+                        <div class="info-panel">
+                            <p><strong>Comparable Method:</strong> The valuation is calculated by analyzing comparable
+                                properties and applying adjustments based on differences in size, condition, location,
+                                and
+                                market timing.</p>
+                        </div>
+
+                        <div id="calculationSummary" class="summary-grid">
+                            <!-- Calculation summary will be populated here -->
+                        </div>
+
+                        <div class="valuation-result" id="valuationResult">
+                            <h2>Estimated Market Value</h2>
+                            <div class="valuation-amount" id="valuationAmount">£0</div>
+                            <div class="valuation-range" id="valuationRange">Range: £0 - £0</div>
+                        </div>
+                    </div>
+
+                    <!-- Manual Mode Content -->
+                    <div id="manualModeContent" class="mode-content hidden">
+                        <div class="info-panel info-panel-manual">
+                            <p><strong>Manual Valuation:</strong> Enter your own valuation based on your professional
+                                analysis of the comparables and market conditions. Ensure you provide detailed
+                                justification in the notes below.</p>
+                        </div>
+
+                        <div class="manual-valuation-inputs">
+                            <div class="form-group">
+                                <label for="manualValuation" class="label-required">Estimated Market Value (£)</label>
+                                <input type="number" id="manualValuation" placeholder="e.g., 500000" min="0" step="1000"
+                                    oninput="updateManualValuation()">
+                                <span class="input-hint">Enter the valuation amount in pounds</span>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="manualLowerRange" class="label-required">Lower Range (£)</label>
+                                    <input type="number" id="manualLowerRange" placeholder="e.g., 475000" min="0"
+                                        step="1000" oninput="updateManualValuation()">
+                                </div>
+                                <div class="form-group">
+                                    <label for="manualUpperRange" class="label-required">Upper Range (£)</label>
+                                    <input type="number" id="manualUpperRange" placeholder="e.g., 525000" min="0"
+                                        step="1000" oninput="updateManualValuation()">
+                                </div>
+                            </div>
+
+                            <div class="valuation-result manual-result" id="manualValuationDisplay">
+                                <h2>Your Valuation</h2>
+                                <div class="valuation-amount" id="manualValuationAmount">£0</div>
+                                <div class="valuation-range" id="manualValuationRange">Range: £0 - £0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="valuationNotes">Valuation Notes & Justification</label>
+                        <textarea id="valuationNotes"
+                            placeholder="Explain the rationale behind the valuation, key factors considered, and any adjustments made"></textarea>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" class="btn btn-secondary" onclick="previousStep(5)">← Previous</button>
+                        <button type="button" class="btn btn-primary" onclick="nextStep(5)">Next: Review & Generate
+                            Report →</button>
+                    </div>
+                </section>
+
+                <!-- Step 6: Review & Report -->
+                <section class="form-section" id="step6">
+                    <h2>Step 6: Review & Generate Report</h2>
+                    <div class="info-panel">
+                        <p><strong>Final Review:</strong> Please review all information before generating the valuation
+                            report.</p>
+                    </div>
+
+                    <!-- Report Status -->
+                    <div class="form-group">
+                        <label for="reportStatus">Report Status</label>
+                        <select id="reportStatus" onchange="updateReportStatus(this.value)">
+                            <option value="working">Working</option>
+                            <option value="complete">Complete</option>
+                            <option value="archive">Archive</option>
+                        </select>
+                        <span class="input-hint">Update the status of this valuation report</span>
+                    </div>
+
+                    <div id="reviewSummary">
+                        <!-- Review summary will be populated here -->
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="valuerName" class="label-required">Valuer Name</label>
+                            <input type="text" id="valuerName" value="Ross Richards" placeholder="Full name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="valuerQualification" class="label-required">Qualification</label>
+                            <input type="text" id="valuerQualification" value="BEng(Hons), AssocRICS, MCIOB, MRPSA."
+                                placeholder="e.g., MRICS, FRICS" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="companyName" class="label-required">Company Name</label>
+                            <input type="text" id="companyName" value="Surveying People"
+                                placeholder="Valuation company name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="companyAddress">Company Address</label>
+                            <input type="text" id="companyAddress"
+                                value="6th Floor, 200 First Central,  2 Lakeside Drive, Park Royal,  London, NW10 7FQ"
+                                placeholder="Company address">
+                        </div>
+                    </div>
+
+                    <div class="warning-panel">
+                        <strong>⚠️ Professional Declaration:</strong> By generating this report, you confirm that this
+                        valuation has been prepared in accordance with the RICS Valuation - Global Standards (Red Book)
+                        and that you have the necessary competence, independence, and objectivity to undertake this
+                        valuation.
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" class="btn btn-secondary" onclick="previousStep(6)">← Previous</button>
+                        <button type="button" class="btn btn-success" onclick="generatePDF()">
+                            <span>📄 Generate PDF Report</span>
+                        </button>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script src="logo-data.js"></script>
+    <script src="pdf-cover.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
